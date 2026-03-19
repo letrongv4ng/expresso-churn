@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Expresso Churn AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ══ DESIGN TOKENS ══════════════════════════════════════════════════════ */
+:root {
+  --font: 'Be Vietnam Pro', sans-serif;
+  --accent:  #00c49a;
+  --danger:  #e84040;
+  --warn:    #f59e0b;
+  --safe:    #00c49a;
+  --r: 10px;
+}
+[data-theme="light"] {
+  --bg:       #f0f2f7;
+  --surface:  #ffffff;
+  --surface2: #f7f8fc;
+  --border:   #e2e6f0;
+  --text:     #1a1f36;
+  --sub:      #64748b;
+  --hint:     #94a3b8;
+  --input-bg: #f7f8fc;
+  --shadow:   0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.04);
+}
+[data-theme="dark"] {
+  --bg:       #0f1117;
+  --surface:  #1a1f2e;
+  --surface2: #212736;
+  --border:   #2a3148;
+  --text:     #e2e8f0;
+  --sub:      #8892aa;
+  --hint:     #4a5568;
+  --input-bg: #212736;
+  --shadow:   0 1px 3px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.2);
+}
+
+/* ══ RESET ══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background .2s, color .2s;
+}
+
+/* ══ HEADER ═════════════════════════════════════════════════════════════ */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 0 var(--border);
+}
+.logo {
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -.4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(0,196,154,.4);
+  animation: ping 2s ease-in-out infinite;
+}
+@keyframes ping {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,196,154,.4); }
+  50% { box-shadow: 0 0 0 6px rgba(0,196,154,0); }
+}
+.logo-text { color: var(--text); }
+.logo-dot { color: var(--accent); }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+.badge-auc {
+  font-size: 11px; font-weight: 600;
+  color: var(--accent);
+  background: rgba(0,196,154,.1);
+  border: 1px solid rgba(0,196,154,.25);
+  padding: 3px 10px; border-radius: 20px;
+}
+.btn-theme {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-family: var(--font);
+  font-size: 12px; font-weight: 500;
+  color: var(--sub);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-theme:hover { color: var(--text); border-color: var(--accent); }
+
+/* ══ LAYOUT ═════════════════════════════════════════════════════════════ */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+.page-header { margin-bottom: 24px; }
+.page-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+  margin-bottom: 4px;
+}
+.page-title em { font-style: normal; color: var(--accent); }
+.page-desc { font-size: 13px; color: var(--sub); }
+
+/* ══ TABS ════════════════════════════════════════════════════════════════ */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 4px;
+  width: fit-content;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.tab-btn {
+  background: none; border: none;
+  padding: 7px 22px;
+  border-radius: 7px;
+  font-family: var(--font);
+  font-size: 13px; font-weight: 500;
+  color: var(--sub);
+  cursor: pointer;
+  transition: all .15s;
+}
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ══ SIDEBAR GRID ════════════════════════════════════════════════════════ */
+.workspace {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ══ CARD ════════════════════════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  overflow: visible;
+  position: relative;
+}
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+/* ══ FORM ════════════════════════════════════════════════════════════════ */
+.form-body { padding: 0; }
+.form-section {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+}
+.form-section:last-of-type { border-bottom: none; }
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.fields-grid.one-col { grid-template-columns: 1fr; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sub);
+}
+.field-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--hint);
+}
+.field input,
+.field select {
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+}
+.field input::placeholder { color: var(--hint); }
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,196,154,.12);
+}
+.field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+.field select option { background: var(--surface); }
+
+/* SLIDER FIELD */
+.slider-field { grid-column: 1 / -1; }
+.slider-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.slider-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+.slider-value.zero { color: var(--hint); }
+.slider-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.slider-status.danger { background: rgba(232,64,64,.1); color: var(--danger); }
+.slider-status.warn   { background: rgba(245,158,11,.1); color: var(--warn); }
+.slider-status.safe   { background: rgba(0,196,154,.1);  color: var(--safe); }
+.slider-status.empty  { background: var(--surface2); color: var(--hint); }
+input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 4px;
+}
+.slider-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--hint);
+  margin-top: 4px;
+}
+
+/* ══ FORM FOOTER ═════════════════════════════════════════════════════════ */
+.card-header {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--r) var(--r) 0 0;
+  background: var(--surface);
+}
+.form-footer {
+  padding: 14px 24px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 0 0 var(--r) var(--r);
+}
+.btn-predict {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .15s;
+}
+.btn-predict:hover:not(:disabled) {
+  filter: brightness(1.07);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,196,154,.3);
+}
+.btn-predict:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-clear {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sub);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-clear:hover { border-color: var(--sub); color: var(--text); }
+.field-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--hint);
+}
+
+/* SPINNER */
+.spin {
+  width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: rotate .6s linear infinite;
+  display: none;
+}
+.spin.show { display: block; }
+@keyframes rotate { to { transform: rotate(360deg); } }
+
+/* ══ RESULT PANEL ════════════════════════════════════════════════════════ */
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  text-align: center;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border-radius: var(--r);
+}
+.empty-icon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 2px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.empty-icon svg { opacity: .3; }
+.empty-title { font-size: 14px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
+.empty-desc { font-size: 12px; color: var(--hint); max-width: 200px; }
+
+/* ERROR STATE */
+.error-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  text-align: center;
+}
+.error-icon { font-size: 32px; margin-bottom: 12px; }
+.error-msg { font-size: 13px; color: var(--danger); font-weight: 500; }
+.error-sub { font-size: 12px; color: var(--hint); margin-top: 4px; }
+
+/* VERDICT */
+.verdict-block {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.verdict-block.high { background: rgba(232,64,64,.05); }
+.verdict-block.mid  { background: rgba(245,158,11,.05); }
+.verdict-block.low  { background: rgba(0,196,154,.05); }
+.verdict-info { flex: 1; min-width: 0; }
+.verdict-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sub);
+  margin-bottom: 4px;
+}
+.verdict-title {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.verdict-block.high .verdict-title { color: var(--danger); }
+.verdict-block.mid  .verdict-title { color: var(--warn); }
+.verdict-block.low  .verdict-title { color: var(--safe); }
+.verdict-subtitle { font-size: 12px; color: var(--sub); }
+.low-data-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: rgba(245,158,11,.1);
+  border: 1px solid rgba(245,158,11,.25);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warn);
+}
+.verdict-pct {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: opacity .5s ease;
+}
+.verdict-block.high .verdict-pct { color: var(--danger); }
+.verdict-block.mid  .verdict-pct { color: var(--warn); }
+.verdict-block.low  .verdict-pct { color: var(--safe); }
+
+/* NARRATIVE */
+.narrative-block { padding: 20px 24px; flex: 1; }
+.narrative-section { margin-bottom: 18px; }
+.narrative-section:last-child { margin-bottom: 0; }
+.narrative-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sub);
+  margin-bottom: 8px;
+}
+.narrative-text {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text);
+}
+.narrative-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+.signals { display: flex; flex-direction: column; gap: 9px; }
+.signal-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.signal-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.signal-dot.bad  { background: var(--danger); box-shadow: 0 0 0 3px rgba(232,64,64,.15); }
+.signal-dot.warn { background: var(--warn);   box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
+.signal-dot.ok   { background: var(--safe);   box-shadow: 0 0 0 3px rgba(0,196,154,.15); }
+
+/* LOADING NARRATIVE */
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  font-size: 13px;
+  color: var(--sub);
+}
+.ai-dots { display: flex; gap: 4px; }
+.ai-dots span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: .3;
+  animation: blink 1.2s ease-in-out infinite;
+}
+.ai-dots span:nth-child(2) { animation-delay: .2s; }
+.ai-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+/* ══ BATCH TAB ════════════════════════════════════════════════════════════ */
+.batch-wrapper { max-width: 640px; }
+.upload-zone {
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: var(--r);
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .15s;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.upload-zone:hover,
+.upload-zone.dragover { border-color: var(--accent); background: rgba(0,196,154,.03); }
+.upload-zone-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.upload-zone-sub { font-size: 13px; color: var(--sub); }
+#file-name { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 10px; min-height: 18px; }
+#file-input { display: none; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+.stat-box-label { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+.stat-box-value { font-size: 28px; font-weight: 800; line-height: 1; }
+.stat-box-value.danger { color: var(--danger); }
+.stat-box-value.warn   { color: var(--warn); }
+.stat-box-value.safe   { color: var(--safe); }
+
+/* ══ TOAST ════════════════════════════════════════════════════════════════ */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 999;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transform: translateY(16px);
+  opacity: 0;
+  transition: all .25s ease;
+  pointer-events: none;
+  max-width: 380px;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.success { border-left: 3px solid var(--safe); color: var(--safe); }
+#toast.error   { border-left: 3px solid var(--danger); color: var(--danger); }
+#toast.info    { border-left: 3px solid var(--accent); }
+
+/* ══ TOOLTIP ══════════════════════════════════════════════════════════════ */
+.tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--sub);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: help;
+  position: relative;
+  margin-left: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.tip:hover { background: var(--accent); color: #fff; }
+.tip-box {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  padding: 10px 13px;
+  border-radius: 8px;
+  width: 230px;
+  white-space: normal;
+  text-align: left;
+  letter-spacing: 0;
+  text-transform: none;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.tip-box::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text);
+}
+.tip:hover .tip-box { opacity: 1; }
+.tip-box b { color: var(--accent); }
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  .workspace { grid-template-columns: 1fr; }
+  main { padding: 20px 16px 60px; }
+  header { padding: 0 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-pulse"></div>
+    <span class="logo-text">EXPRESSO</span>
+    <span class="logo-dot">.</span>
+    <span class="logo-text">AI</span>
+  </div>
+  <div class="header-right">
+    <span class="badge-auc">CatBoost · AUC 0.9179</span>
+    <button class="btn-theme" onclick="toggleTheme()" id="theme-btn">Chế độ tối</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="page-header">
+    <h1 class="page-title">Khách hàng này có <em>rời mạng</em> không?</h1>
+    <p class="page-desc">Nhập thông tin bên dưới — AI sẽ phân tích và giải thích bằng ngôn ngữ đơn giản.</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('single', this)">Phân tích 1 khách hàng</button>
+    <button class="tab-btn" onclick="switchTab('batch', this)">Phân tích hàng loạt (CSV)</button>
+  </div>
+
+  <!-- ═══ TAB SINGLE ═══ -->
+  <div class="tab-panel active" id="tab-single">
+    <div class="workspace">
+
+      <!-- FORM -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Thông tin khách hàng</span>
+          <span class="field-count" id="field-count">0 / 12 trường</span>
+        </div>
+        <div class="form-body">
+
+          <!-- Nhóm 1: Cơ bản -->
+          <div class="form-section">
+            <div class="section-label">Thông tin cơ bản</div>
+            <div class="fields-grid">
+              <div class="field">
+                <label class="field-label">Tỉnh / Thành phố
+                  <span class="tip">?<span class="tip-box">Khu vực đăng ký SIM của khách hàng tại Senegal. Ảnh hưởng lớn nhất đến kết quả — chiếm <b>43%</b> trong mô hình.</span></span>
+                </label>
+                <select id="f-region" onchange="countFields()">
+                  <option value="">— Chọn khu vực —</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Tuổi thuê bao?
+                  <span class="tip">?<span class="tip-box">Thâm niên sử dụng mạng Expresso. Khách dùng <b>dưới 12 tháng</b> có nguy cơ rời mạng cao hơn. Dùng trên 24 tháng thường trung thành.</span></span>
+                </label>
+                <select id="f-tenure" onchange="countFields()">
+                  <option value="">— Chọn thâm niên —</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nhóm 2: Mức độ hoạt động -->
+          <div class="form-section">
+            <div class="section-label">Mức độ hoạt động <span style="color:var(--danger);font-size:10px;">★ Quan trọng nhất</span></div>
+            <div class="fields-grid one-col">
+              <div class="field slider-field">
+                <div class="slider-top">
+                  <div>
+                    <div class="field-label">Số ngày có giao dịch trong 90 ngày gần nhất
+                      <span class="tip">?<span class="tip-box">Số ngày khách thực sự dùng dịch vụ (gọi, nhắn tin, nạp tiền...) trong 3 tháng qua. Khách <b>bình thường: ~34 ngày</b>. Khách <b>sắp rời: chỉ ~2 ngày</b>.</span></span>
+                    </div>
+                    <div class="field-hint">Kéo thanh để chọn — quan trọng nhất trong mô hình</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="slider-value zero" id="reg-val">?</div>
+                    <div class="slider-status empty" id="reg-status">Chưa chọn</div>
+                  </div>
+                </div>
+                <input type="range" id="f-reg" min="0" max="62" value="0" oninput="updateSlider(this.value)"/>
+                <div class="slider-scale"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>62</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nhóm 3: Tài chính -->
+          <div class="form-section">
+            <div class="section-label">Tài chính</div>
+            <div class="fields-grid">
+              <div class="field">
+                <label class="field-label">Tổng tiền nạp
+                  <span class="tip">?<span class="tip-box">Tổng số tiền khách nạp vào tài khoản trong <b>1 tháng</b>. Đơn vị: CFA Franc (<b>1.000 CFA ≈ 40.000 VND</b>). Mức bình thường: ~3.075 CFA.</span></span>
+                </label>
+                <input type="number" id="f-montant" placeholder="VD: 4200" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Số lần nạp tiền
+                  <span class="tip">?<span class="tip-box">Số lần nạp tiền trong <b>1 tháng</b> (kỳ tính cước). Khách bình thường nạp <b>~7 lần/tháng</b>. Dưới 3 lần là dấu hiệu không còn dùng nhiều.</span></span>
+                </label>
+                <input type="number" id="f-freq-rech" placeholder="VD: 8" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Doanh thu nhà mạng
+                  <span class="tip">?<span class="tip-box">Tổng tiền nhà mạng <b>thu được</b> từ khách trong kỳ (cước gọi + data + SMS). Đơn vị: CFA. Mức bình thường: ~3.000 CFA. Dưới 1.000 là đáng lo.</span></span>
+                </label>
+                <input type="number" id="f-revenue" placeholder="VD: 4199" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Số lần giao dịch
+                  <span class="tip">?<span class="tip-box">Tổng số lần phát sinh <b>bất kỳ giao dịch nào</b> trong kỳ: gọi điện, nhắn tin, dùng data, nạp tiền... Khách bình thường: ~9 lần. Dưới 4 = gần như không dùng gì.</span></span>
+                </label>
+                <input type="number" id="f-frequence" placeholder="VD: 14" min="0" oninput="countFields()"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nhóm 4: Cuộc gọi & data -->
+          <div class="form-section">
+            <div class="section-label">Gọi điện & Internet</div>
+            <div class="fields-grid">
+              <div class="field">
+                <label class="field-label">Gọi nội mạng Expresso
+                  <span class="tip">?<span class="tip-box">Số cuộc gọi đến <b>thuê bao Expresso khác</b> trong kỳ. Khách bình thường: ~29 cuộc. Nếu con số này thấp thì có thể đang dùng mạng khác để thay thế.</span></span>
+                </label>
+                <input type="number" id="f-onnet" placeholder="VD: 314" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Gọi sang mạng Orange
+                  <span class="tip">?<span class="tip-box">Số cuộc gọi đến thuê bao <b>Orange</b> — nhà mạng lớn nhất Senegal và là đối thủ cạnh tranh chính của Expresso. Gọi nhiều sang đây là bình thường.</span></span>
+                </label>
+                <input type="number" id="f-orange" placeholder="VD: 132" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Gọi sang mạng Tigo
+                  <span class="tip">?<span class="tip-box">Số cuộc gọi đến thuê bao <b>Tigo</b> — nhà mạng nhỏ hơn tại Senegal. Khoảng <b>60% khách không có dữ liệu này</b> — để trống là bình thường.</span></span>
+                </label>
+                <input type="number" id="f-tigo" placeholder="Có thể trống" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Data đã dùng (MB)
+                  <span class="tip">?<span class="tip-box">Tổng lưu lượng internet khách dùng trong kỳ. Đơn vị: <b>MB</b>. Khách bình thường: ~261 MB. Để trống nếu khách <b>không đăng ký gói data</b> (~49% không có).</span></span>
+                </label>
+                <input type="number" id="f-data" placeholder="Có thể trống" min="0" oninput="countFields()"/>
+              </div>
+              <div class="field">
+                <label class="field-label">Lần đăng ký gói cước
+                  <span class="tip">?<span class="tip-box">Số lần khách <b>kích hoạt gói cước</b> (data, gọi, combo...) trong kỳ. Khách bình thường: ~5 lần. Cao nghĩa là khách đang tích cực dùng dịch vụ.</span></span>
+                </label>
+                <input type="number" id="f-freq-pack" placeholder="VD: 3" min="0" oninput="countFields()"/>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="form-footer">
+          <button class="btn-predict" id="btn-predict" onclick="runPredict()">
+            Phân tích ngay
+            <div class="spin" id="spin-predict"></div>
+          </button>
+          <button class="btn-clear" onclick="clearForm()">Xóa tất cả</button>
+          <span class="field-count" id="field-count-footer"></span>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div class="result-card" id="result-card">
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4M12 16h.01"/>
+            </svg>
+          </div>
+          <div class="empty-title">Chưa có kết quả</div>
+          <div class="empty-desc">Điền thông tin khách hàng và nhấn Phân tích</div>
+        </div>
+
+        <div id="result-content" style="display:none; flex-direction:column; flex:1;">
+          <div id="verdict-area"></div>
+          <div class="narrative-block" id="narrative-area"></div>
+        </div>
+
+        <div class="error-state" id="error-state" style="display:none;">
+          <div class="error-icon">⚠</div>
+          <div class="error-msg" id="error-msg">Đã xảy ra lỗi</div>
+          <div class="error-sub" id="error-sub">Vui lòng thử lại</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ TAB BATCH ═══ -->
+  <div class="tab-panel" id="tab-batch">
+    <div class="batch-wrapper">
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-zone-title">Kéo thả hoặc bấm để chọn file</div>
+        <div class="upload-zone-sub">Chấp nhận file .csv — schema giống Test.csv (không cần cột CHURN)</div>
+        <div id="file-name"></div>
+        <input type="file" id="file-input" accept=".csv" onchange="handleFile(this)"/>
+      </div>
+
+      <button class="btn-predict" id="btn-batch" onclick="runBatch()" disabled>
+        Chạy phân tích
+        <div class="spin" id="spin-batch"></div>
+      </button>
+
+      <div id="batch-result" style="display:none; margin-top:24px;">
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-box-label">Tổng khách hàng</div><div class="stat-box-value" id="s-total">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Dự báo rời mạng</div><div class="stat-box-value danger" id="s-churn">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Tỉ lệ churn</div><div class="stat-box-value warn" id="s-rate">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Rủi ro cao ≥70%</div><div class="stat-box-value danger" id="s-high">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Rủi ro trung bình</div><div class="stat-box-value warn" id="s-mid">—</div></div>
+          <div class="stat-box"><div class="stat-box-label">Rủi ro thấp</div><div class="stat-box-value safe" id="s-low">—</div></div>
+        </div>
+        <button class="btn-predict" onclick="downloadResult()">Tải kết quả CSV</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ─── STATE ──────────────────────────────────────────────────
+let _lastInput = {}, _lastPred = {}, _batchBlob = null, _batchFile = '';
+
+// ─── THEME ──────────────────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.dataset.theme === 'light' ? 'dark' : 'light';
+  html.dataset.theme = next;
+  document.getElementById('theme-btn').textContent = next === 'light' ? 'Chế độ tối' : 'Chế độ sáng';
+  localStorage.setItem('theme', next);
+}
+(function() {
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.dataset.theme = saved;
+  document.getElementById('theme-btn').textContent = saved === 'light' ? 'Chế độ tối' : 'Chế độ sáng';
+})();
+
+// ─── INIT ────────────────────────────────────────────────────
+async function init() {
+  try {
+    const { regions, tenures } = await (await fetch('/schema')).json();
+    populateSelect('f-region', regions);
+    populateSelect('f-tenure', tenures);
+  } catch {
+    showToast('Không kết nối được API — hãy chạy uvicorn trước', 'error');
+  }
+}
+function populateSelect(id, items) {
+  const sel = document.getElementById(id);
+  items.forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ─── SLIDER ──────────────────────────────────────────────────
+function updateSlider(v) {
+  const n = parseInt(v);
+  const valEl = document.getElementById('reg-val');
+  const statusEl = document.getElementById('reg-status');
+  valEl.classList.toggle('zero', n === 0);
+
+  if (n === 0) {
+    valEl.textContent = '?';
+    statusEl.textContent = 'Chưa chọn';
+    statusEl.className = 'slider-status empty';
+  } else {
+    valEl.textContent = n;
+    if (n <= 5) {
+      statusEl.textContent = 'Rất thấp — nguy hiểm';
+      statusEl.className = 'slider-status danger';
+    } else if (n <= 15) {
+      statusEl.textContent = 'Thấp — cần theo dõi';
+      statusEl.className = 'slider-status warn';
+    } else if (n <= 40) {
+      statusEl.textContent = 'Trung bình';
+      statusEl.className = 'slider-status warn';
+    } else {
+      statusEl.textContent = 'Tốt — trung thành';
+      statusEl.className = 'slider-status safe';
+    }
+  }
+  countFields();
+}
+
+// ─── FIELD COUNT ─────────────────────────────────────────────
+function countFields() {
+  let count = 0;
+  const ids = ['f-region','f-tenure','f-montant','f-freq-rech','f-revenue',
+               'f-frequence','f-onnet','f-orange','f-tigo','f-data','f-freq-pack'];
+  ids.forEach(id => { if (document.getElementById(id).value.trim()) count++; });
+  const reg = parseInt(document.getElementById('f-reg').value);
+  if (reg > 0) count++;
+  const label = `${count} / 12 trường`;
+  document.getElementById('field-count').textContent = label;
+  const fc = document.getElementById('field-count-footer');
+  if (fc) fc.textContent = count > 0 ? label : '';
+}
+
+// ─── READ FORM ───────────────────────────────────────────────
+function readForm() {
+  const map = {
+    'f-region': 'REGION', 'f-tenure': 'TENURE',
+    'f-montant': 'MONTANT', 'f-freq-rech': 'FREQUENCE_RECH',
+    'f-revenue': 'REVENUE', 'f-frequence': 'FREQUENCE',
+    'f-onnet': 'ON_NET', 'f-orange': 'ORANGE',
+    'f-tigo': 'TIGO', 'f-data': 'DATA_VOLUME',
+    'f-freq-pack': 'FREQ_TOP_PACK',
+  };
+  const out = {};
+  Object.entries(map).forEach(([id, key]) => {
+    const v = document.getElementById(id).value.trim();
+    if (v !== '') out[key] = isNaN(v) ? v : Number(v);
+  });
+  const reg = parseInt(document.getElementById('f-reg').value);
+  if (reg > 0) out['REGULARITY'] = reg;
+  return out;
+}
+
+function clearForm() {
+  ['f-region','f-tenure','f-montant','f-freq-rech','f-revenue','f-frequence',
+   'f-onnet','f-orange','f-tigo','f-data','f-freq-pack'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-reg').value = 0;
+  updateSlider(0);
+  countFields();
+  showState('empty');
+}
+
+// ─── VALIDATION ──────────────────────────────────────────────
+function validateForm(inp) {
+  const keys = Object.keys(inp);
+  if (keys.length === 0) {
+    showToast('Vui lòng điền ít nhất 1 thông tin trước khi phân tích', 'error');
+    return false;
+  }
+  // Cần ít nhất 1 core feature
+  const coreFields = ['REGULARITY','MONTANT','REVENUE','FREQUENCE_RECH','FREQUENCE','REGION'];
+  const hasCore = coreFields.some(f => inp[f] !== undefined);
+  if (!hasCore) {
+    showToast('Vui lòng điền ít nhất: khu vực, tiền nạp, doanh thu, số lần giao dịch, hoặc kéo thanh hoạt động', 'error');
+    return false;
+  }
+  return true;
+}
+
+// ─── STATE MANAGEMENT ────────────────────────────────────────
+function showState(state) {
+  document.getElementById('empty-state').style.display    = state === 'empty'   ? '' : 'none';
+  document.getElementById('result-content').style.display = state === 'result'  ? 'flex' : 'none';
+  document.getElementById('error-state').style.display    = state === 'error'   ? '' : 'none';
+}
+
+// ─── PREDICT ─────────────────────────────────────────────────
+async function runPredict() {
+  _lastInput = readForm();
+  if (!validateForm(_lastInput)) return;
+
+  const btn  = document.getElementById('btn-predict');
+  const spin = document.getElementById('spin-predict');
+  btn.disabled = true;
+  spin.classList.add('show');
+
+  const lowData = Object.keys(_lastInput).length < 4;
+
+  try {
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(_lastInput),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Lỗi server');
+    }
+    _lastPred = await res.json();
+
+    showState('result');
+    renderVerdict(_lastPred, lowData);
+    renderNarrativeLoading();
+    fetchExplain();
+
+  } catch (e) {
+    showState('error');
+    document.getElementById('error-msg').textContent = e.message;
+    document.getElementById('error-sub').textContent = 'Kiểm tra lại server và thử lại';
+    showToast('Lỗi: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    spin.classList.remove('show');
+  }
+}
+
+// ─── RENDER VERDICT ──────────────────────────────────────────
+function renderVerdict(data, lowData = false) {
+  const prob  = data.churn_probability;
+  const level = prob >= .7 ? 'high' : prob >= .4 ? 'mid' : 'low';
+  const config = {
+    high: { title: 'Rất có khả năng rời mạng', sub: 'Nguy cơ cao — cần can thiệp sớm' },
+    mid:  { title: 'Có dấu hiệu đáng lo ngại',  sub: 'Nguy cơ trung bình — nên theo dõi thêm' },
+    low:  { title: 'Khả năng ở lại cao',          sub: 'Ổn định — tiếp tục duy trì chăm sóc' },
+  };
+  const lowDataHTML = lowData
+    ? `<div class="low-data-warning">⚠ Ít dữ liệu — kết quả mang tính tham khảo, độ tin cậy thấp</div>`
+    : '';
+
+  document.getElementById('verdict-area').innerHTML = `
+    <div class="verdict-block ${level}">
+      <div class="verdict-info">
+        <div class="verdict-eyebrow">Kết quả dự đoán</div>
+        <div class="verdict-title">${config[level].title}</div>
+        <div class="verdict-subtitle">${config[level].sub}</div>
+        ${lowDataHTML}
+      </div>
+      <div class="verdict-pct" id="verdict-pct" style="opacity:0">
+        ${Math.round(prob * 100)}%
+      </div>
+    </div>`;
+}
+
+// ─── RENDER NARRATIVE LOADING ────────────────────────────────
+function renderNarrativeLoading() {
+  document.getElementById('narrative-area').innerHTML = `
+    <div class="ai-loading">
+      <div class="ai-dots"><span></span><span></span><span></span></div>
+      AI đang phân tích dữ liệu...
+    </div>`;
+}
+
+// ─── FETCH EXPLAIN ───────────────────────────────────────────
+async function fetchExplain() {
+  try {
+    const res = await fetch('/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer: _lastInput, prediction: _lastPred }),
+    });
+    if (!res.ok) throw new Error('API không khả dụng');
+    const data = await res.json();
+    renderNarrativeAI(data);
+  } catch {
+    renderNarrativeFallback(_lastPred, _lastInput);
+  }
+}
+
+// ─── RENDER AI NARRATIVE ─────────────────────────────────────
+function renderNarrativeAI(data) {
+  const signals = (data.signals || []).map(s =>
+    `<div class="signal-row"><div class="signal-dot warn"></div><div>${s}</div></div>`
+  ).join('');
+
+  document.getElementById('narrative-area').innerHTML = `
+    <div class="narrative-section">
+      <div class="narrative-eyebrow">Nhận định tổng quan</div>
+      <div class="narrative-text">${data.summary || ''}</div>
+    </div>
+    <hr class="narrative-divider"/>
+    <div class="narrative-section">
+      <div class="narrative-eyebrow">Dấu hiệu nổi bật</div>
+      <div class="signals">${signals}</div>
+    </div>
+    <hr class="narrative-divider"/>
+    <div class="narrative-section">
+      <div class="narrative-eyebrow">Gợi ý hành động</div>
+      <div class="narrative-text">${data.action || ''}</div>
+    </div>`;
+
+  revealPct();
+}
+
+// ─── FALLBACK NARRATIVE ──────────────────────────────────────
+function renderNarrativeFallback(pred, inp) {
+  const prob = pred.churn_probability;
+  const pct  = Math.round(prob * 100);
+  const reg  = inp.REGULARITY, fRech = inp.FREQUENCE_RECH;
+  const rev  = inp.REVENUE,    data  = inp.DATA_VOLUME;
+
+  let summary = `Mô hình dự đoán khách hàng này có <strong>${pct}% khả năng rời mạng</strong>. `;
+  if (prob >= .7)      summary += 'Đây là mức rủi ro cao — nhiều chỉ số hành vi đang giảm.';
+  else if (prob >= .4) summary += 'Mức rủi ro trung bình — cần theo dõi thêm.';
+  else                 summary += 'Các chỉ số tổng thể ở mức bình thường, khách đang ổn định.';
+
+  const sigs = [];
+  if (reg !== undefined) {
+    if      (reg <= 2)  sigs.push({ t:'bad',  m:`Hoạt động gần như bằng 0 — chỉ ${reg}/62 ngày trong 3 tháng qua. Đây là dấu hiệu rõ nhất của khách sắp rời.` });
+    else if (reg <= 10) sigs.push({ t:'bad',  m:`Hoạt động rất thấp — ${reg}/62 ngày. Mức trung bình của khách bình thường là 34 ngày.` });
+    else if (reg <= 30) sigs.push({ t:'warn', m:`Hoạt động ở mức trung bình — ${reg}/62 ngày.` });
+    else                sigs.push({ t:'ok',   m:`Hoạt động đều đặn — ${reg}/62 ngày. Tín hiệu tốt cho thấy khách đang gắn bó.` });
+  }
+  if (fRech !== undefined) {
+    if      (fRech <= 2) sigs.push({ t:'bad',  m:`Nạp tiền rất ít — chỉ ${fRech} lần. Khách bình thường nạp khoảng 7 lần/kỳ.` });
+    else if (fRech >= 6) sigs.push({ t:'ok',   m:`Nạp tiền thường xuyên — ${fRech} lần/kỳ, cho thấy khách vẫn tích cực dùng mạng.` });
+  }
+  if (rev !== undefined) {
+    if (rev < 1000) sigs.push({ t:'bad',  m:`Doanh thu rất thấp — ${rev.toLocaleString()} CFA. Mức bình thường khoảng 3.000 CFA.` });
+    else if (rev >= 3000) sigs.push({ t:'ok', m:`Doanh thu ổn định — ${rev.toLocaleString()} CFA.` });
+  }
+  if (data === undefined) sigs.push({ t:'warn', m:'Không có dữ liệu sử dụng internet — kết nối với nhà mạng qua kênh số thấp.' });
+  if (sigs.length === 0)  sigs.push({ t:'warn', m:'Chưa đủ dữ liệu để phân tích chi tiết — hãy điền thêm thông tin.' });
+
+  let action = '';
+  if      (prob >= .7) action = 'Cần liên hệ khách hàng trong vòng 48 giờ. Đề xuất ưu đãi tặng data hoặc giảm giá gói cước để giữ chân.';
+  else if (prob >= .4) action = 'Đưa vào danh sách ưu tiên chăm sóc. Gợi ý gói cước phù hợp hoặc chương trình khuyến mãi để tăng gắn kết.';
+  else                 action = 'Khách hàng ổn định, không cần can thiệp đặc biệt. Có thể tặng điểm thưởng nhỏ để duy trì sự trung thành.';
+
+  const sigsHTML = sigs.map(s =>
+    `<div class="signal-row"><div class="signal-dot ${s.t}"></div><div>${s.m}</div></div>`
+  ).join('');
+
+  document.getElementById('narrative-area').innerHTML = `
+    <div class="narrative-section">
+      <div class="narrative-eyebrow">Nhận định tổng quan</div>
+      <div class="narrative-text">${summary}</div>
+    </div>
+    <hr class="narrative-divider"/>
+    <div class="narrative-section">
+      <div class="narrative-eyebrow">Dấu hiệu nổi bật</div>
+      <div class="signals">${sigsHTML}</div>
+    </div>
+    <hr class="narrative-divider"/>
+    <div class="narrative-section">
+      <div class="narrative-eyebrow">Gợi ý hành động</div>
+      <div class="narrative-text">${action}</div>
+    </div>`;
+
+  revealPct();
+}
+
+function revealPct() {
+  const el = document.getElementById('verdict-pct');
+  if (el) el.style.opacity = '1';
+}
+
+// ─── BATCH ───────────────────────────────────────────────────
+function handleFile(input) {
+  const f = input.files[0]; if (!f) return;
+  _batchFile = f.name;
+  document.getElementById('file-name').textContent = '✓ ' + f.name;
+  document.getElementById('btn-batch').disabled = false;
+}
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', ()  => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (!f?.name.endsWith('.csv')) { showToast('Chỉ chấp nhận file .csv', 'error'); return; }
+  const dt = new DataTransfer(); dt.items.add(f);
+  const inp = document.getElementById('file-input'); inp.files = dt.files;
+  handleFile(inp);
+});
+
+async function runBatch() {
+  const btn = document.getElementById('btn-batch');
+  const spin = document.getElementById('spin-batch');
+  const file = document.getElementById('file-input').files[0];
+  if (!file) return;
+
+  btn.disabled = true; spin.classList.add('show');
+  document.getElementById('batch-result').style.display = 'none';
+
+  try {
+    const form = new FormData(); form.append('file', file);
+    const res = await fetch('/predict-batch', { method: 'POST', body: form });
+    if (!res.ok) throw new Error((await res.json()).detail);
+
+    const raw = res.headers.get('X-Summary');
+    const s   = raw ? JSON.parse(raw.replace(/'/g, '"')) : null;
+    _batchBlob = await res.blob();
+
+    if (s) {
+      document.getElementById('s-total').textContent = s.total.toLocaleString();
+      document.getElementById('s-churn').textContent = s.churn_count.toLocaleString();
+      document.getElementById('s-rate').textContent  = s.churn_rate + '%';
+      document.getElementById('s-high').textContent  = s.high_risk_count.toLocaleString();
+      document.getElementById('s-mid').textContent   = s.mid_risk_count.toLocaleString();
+      document.getElementById('s-low').textContent   = s.low_risk_count.toLocaleString();
+    }
+    document.getElementById('batch-result').style.display = 'block';
+    showToast('Phân tích xong! Nhấn tải kết quả để download.', 'success');
+  } catch (e) {
+    showToast('Lỗi: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; spin.classList.remove('show');
+  }
+}
+
+function downloadResult() {
+  if (!_batchBlob) return;
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(_batchBlob),
+    download: _batchFile.replace('.csv', '_predictions.csv'),
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ─── TOAST ───────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.className = '', 4000);
+}
+
+// ─── BOOT ────────────────────────────────────────────────────
+init();
+countFields();
+</script>
+</body>
+</html>

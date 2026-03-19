@@ -1,0 +1,9 @@
+catboost
+scikit-learn
+fastapi
+uvicorn
+python-multipart
+pandas
+numpy
+joblib
+google-genai
