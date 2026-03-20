@@ -699,7 +699,7 @@ input[type=range] {
                 </select>
               </div>
               <div class="field">
-                <label class="field-label">Tuổi thuê bao?
+                <label class="field-label">Đã dùng mạng bao lâu?
                   <span class="tip">?<span class="tip-box">Thâm niên sử dụng mạng Expresso. Khách dùng <b>dưới 12 tháng</b> có nguy cơ rời mạng cao hơn. Dùng trên 24 tháng thường trung thành.</span></span>
                 </label>
                 <select id="f-tenure" onchange="countFields()">
@@ -769,7 +769,7 @@ input[type=range] {
             <div class="fields-grid">
               <div class="field">
                 <label class="field-label">Gọi nội mạng Expresso
-                  <span class="tip">?<span class="tip-box">Số cuộc gọi đến <b>thuê bao Expresso khác</b> trong kỳ. Khách bình thường: ~29 cuộc. Nếu con số này thấp thì có thể đang dùng mạng khác để thay thế.</span></span>
+                  <span class="tip">?<span class="tip-box">Số cuộc gọi đến <b>thuê bao Expresso khác</b> trong kỳ. Khách bình thường: ~29 cuộc. Rất thấp có thể đang dùng mạng khác để thay thế.</span></span>
                 </label>
                 <input type="number" id="f-onnet" placeholder="VD: 314" min="0" oninput="countFields()"/>
               </div>
@@ -783,13 +783,13 @@ input[type=range] {
                 <label class="field-label">Gọi sang mạng Tigo
                   <span class="tip">?<span class="tip-box">Số cuộc gọi đến thuê bao <b>Tigo</b> — nhà mạng nhỏ hơn tại Senegal. Khoảng <b>60% khách không có dữ liệu này</b> — để trống là bình thường.</span></span>
                 </label>
-                <input type="number" id="f-tigo" placeholder="Có thể trống" min="0" oninput="countFields()"/>
+                <input type="number" id="f-tigo" placeholder="Để trống nếu không có" min="0" oninput="countFields()"/>
               </div>
               <div class="field">
                 <label class="field-label">Data đã dùng (MB)
                   <span class="tip">?<span class="tip-box">Tổng lưu lượng internet khách dùng trong kỳ. Đơn vị: <b>MB</b>. Khách bình thường: ~261 MB. Để trống nếu khách <b>không đăng ký gói data</b> (~49% không có).</span></span>
                 </label>
-                <input type="number" id="f-data" placeholder="Có thể trống" min="0" oninput="countFields()"/>
+                <input type="number" id="f-data" placeholder="Để trống nếu không dùng" min="0" oninput="countFields()"/>
               </div>
               <div class="field">
                 <label class="field-label">Lần đăng ký gói cước
@@ -1112,24 +1112,26 @@ async function fetchExplain() {
 
 // ─── RENDER AI NARRATIVE ─────────────────────────────────────
 function renderNarrativeAI(data) {
-  const signals = (data.signals || []).map(s =>
-    `<div class="signal-row"><div class="signal-dot warn"></div><div>${s}</div></div>`
-  ).join('');
+  const signals = (data.behavior_signals || data.signals || []).map(s => {
+    const type = s.type || 'warn';
+    const text = s.text || s;
+    return `<div class="signal-row"><div class="signal-dot ${type}"></div><div>${text}</div></div>`;
+  }).join('');
 
   document.getElementById('narrative-area').innerHTML = `
     <div class="narrative-section">
-      <div class="narrative-eyebrow">Nhận định tổng quan</div>
-      <div class="narrative-text">${data.summary || ''}</div>
+      <div class="narrative-eyebrow">Tại sao mô hình dự đoán vậy?</div>
+      <div class="narrative-text" style="color:var(--sub);font-style:italic;">${data.model_reason || data.summary || ''}</div>
     </div>
     <hr class="narrative-divider"/>
     <div class="narrative-section">
-      <div class="narrative-eyebrow">Dấu hiệu nổi bật</div>
+      <div class="narrative-eyebrow">Thực trạng hành vi thực tế</div>
       <div class="signals">${signals}</div>
     </div>
     <hr class="narrative-divider"/>
     <div class="narrative-section">
-      <div class="narrative-eyebrow">Gợi ý hành động</div>
-      <div class="narrative-text">${data.action || ''}</div>
+      <div class="narrative-eyebrow">Kết luận & gợi ý</div>
+      <div class="narrative-text">${data.conclusion || data.action || ''}</div>
     </div>`;
 
   revealPct();
